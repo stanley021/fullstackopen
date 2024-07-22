@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState,useEffect } from 'react'
+import personService from './axios'
+import "./App.css"
 
 const PersonForm = ({addPerson,newName,nameChange,newNumber,numberChange}) => {
   return(
@@ -13,19 +15,20 @@ const PersonForm = ({addPerson,newName,nameChange,newNumber,numberChange}) => {
 }
 
 const Persons = (persons) =>{
+
   
   if(persons.filter){
   const filteredPersons = persons.list.filter(person => 
     person.name.toLowerCase().includes(persons.filter.toLowerCase()));
-
-    console.log("he",filteredPersons)
-
+    
     return(
       <div>
         {filteredPersons.map(person =>
-        <p key={person.id}>{person.name} {person.number}</p>
+        <>
+        <p key={person.id}>{person.name} {person.number} <button onClick={()=> persons.remove(person.id)}>Delete</button></p>
+        
+        </>
       )
-  
       }
       </div>
       
@@ -35,11 +38,12 @@ const Persons = (persons) =>{
 
   return(
     <div>
+      
       {persons.list.map(person =>
-      <p key={person.id}>{person.name} {person.number}</p>
-    )
-
-    }
+      <>
+      <p key={person.id}>{person.name} {person.number} <button onClick={()=> persons.remove(person.id)}>Delete</button> </p>
+      </>
+    )}
     </div>
     
   )
@@ -60,37 +64,107 @@ const Filter = ({filter, setNewFilter}) =>{
   
 }
 
+const BNotification = ({message}) => {
+  if (message === null){
+    return null;
+  }
+  return(
+    <div className='error'>
+      {message}
+    </div>
+  )
+}
+const GNotification = ({message}) => {
+  if (message === null){
+    return null;
+  }
+  return(
+    <div className='success'>
+      {message}
+    </div>
+  )
+}
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ])
-
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filter, setNewFilter] = useState('')
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [successMessage, setsuccessMessage] = useState(null)
+  
+
+  const hook = () =>{
+    personService.getAll().then(initialPersons=>{
+      setPersons(initialPersons)
+    })
+  }
+  useEffect(hook, [])
 
   const nameChange = (event) =>{
     setNewName(event.target.value)
   }
+
   const numberChange = (event) =>{
     setNewNumber(event.target.value)
   }
+
   const addPerson = (event) =>{
     event.preventDefault()
-    const nameExist = persons.some(person => newName === person.name)
+    const nameExist = persons.find(person => newName === person.name)
+  
+
     if (nameExist){
       alert(`${newName} already exists`)
+      if(window.confirm("Do you want to replace the old number with a new one?")){
+        const updatedPerson = {
+          id: String(nameExist.id),
+          name : newName,
+          number : newNumber,
+        }
+        
+
+        personService.update(nameExist.id,updatedPerson).then(returnedPersons =>{
+          setPersons(persons.map(person => person.id !== nameExist.id ? person : returnedPersons));
+          setsuccessMessage("Changed the user's number");
+          setTimeout(()=> setsuccessMessage(null),5000)
+        }).catch(error=>{
+          setErrorMessage("User does not exist");
+          setTimeout(()=>{
+            setErrorMessage(null)
+          }, 5000)
+        })
+
+      }
+
       return;
     }
+    
     const newPerson = {
+      id: String(persons.length + 1),
       name : newName,
       number : newNumber,
+      
     }
-    setPersons([...persons,newPerson])
+    
+
+    personService.create(newPerson).then(returnedPerson =>{
+      setPersons([...persons,newPerson]);
+      setsuccessMessage("Added user to the database");
+      setTimeout(()=> setsuccessMessage(null),5000)
+
+    })
+
+  }
+
+  const handleDelete = (id) => {
+    if (window.confirm("are you sure")){
+      personService.remove(id)
+      .then(()=>{
+        setPersons(persons.filter(person => person.id !== id));
+      })
+      
+    }
   }
 
 
@@ -100,6 +174,9 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <BNotification message={errorMessage}/>
+      <GNotification message={successMessage}/>
+
       <Filter filter = {filter} setNewFilter = {setNewFilter}/>
 
       <h3>Add a new</h3>
@@ -108,7 +185,7 @@ const App = () => {
       
       <h3>Numbers</h3>
 
-      <Persons list = {persons} filter={filter}/>
+      <Persons list = {persons} filter={filter} remove = {handleDelete}/>
       
     </div>
   )
