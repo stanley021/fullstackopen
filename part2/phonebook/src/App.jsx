@@ -5,8 +5,8 @@ import "./App.css"
 const PersonForm = ({addPerson,newName,nameChange,newNumber,numberChange}) => {
   return(
     <form onSubmit={addPerson}>
-      <div>name: <input value={newName} onChange={nameChange}/></div>
-      <div>number: <input value={newNumber} onChange={numberChange}/></div>
+      <div>Name: <input value={newName} onChange={nameChange}/></div>
+      <div>Number: <input value={newNumber} onChange={numberChange}/></div>
       <div>
         <button type="submit">add</button>
       </div>
@@ -172,18 +172,18 @@ const App = () => {
   
   
   return (
-    <div>
+    <div className='root'>
       <h2>Phonebook</h2>
       <BNotification message={errorMessage}/>
       <GNotification message={successMessage}/>
 
       <Filter filter = {filter} setNewFilter = {setNewFilter}/>
 
-      <h3>Add a new</h3>
+      <h2>Add a new</h2>
       <PersonForm addPerson ={addPerson} newName = {newName} nameChange = {nameChange} newNumber={newNumber} numberChange={numberChange}/>
 
       
-      <h3>Numbers</h3>
+      <h2>Numbers</h2>
 
       <Persons list = {persons} filter={filter} remove = {handleDelete}/>
       
