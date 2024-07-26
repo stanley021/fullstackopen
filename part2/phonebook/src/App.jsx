@@ -109,53 +109,60 @@ const App = () => {
     setNewNumber(event.target.value)
   }
 
-  const addPerson = (event) =>{
-    event.preventDefault()
-    const nameExist = persons.find(person => newName === person.name)
+  const addPerson = (event) => {
+    event.preventDefault();
   
-
-    if (nameExist){
-      alert(`${newName} already exists`)
-      if(window.confirm("Do you want to replace the old number with a new one?")){
+    // Find if a person with the same name already exists
+    const nameExist = persons.find(person => newName === person.name);
+  
+    if (nameExist) {
+      alert(`${newName} already exists`);
+  
+      if (window.confirm("Do you want to replace the old number with a new one?")) {
+        // Prepare updated data
         const updatedPerson = {
-          id: String(nameExist.id),
-          name : newName,
-          number : newNumber,
-        }
-        
-
-        personService.update(nameExist.id,updatedPerson).then(returnedPersons =>{
-          setPersons(persons.map(person => person.id !== nameExist.id ? person : returnedPersons));
-          setsuccessMessage("Changed the user's number");
-          setTimeout(()=> setsuccessMessage(null),5000)
-        }).catch(error=>{
-          setErrorMessage("User does not exist");
-          setTimeout(()=>{
-            setErrorMessage(null)
-          }, 5000)
-        })
-
+          name: newName,
+          number: newNumber,
+        };
+  
+        // Call update with the correct parameters: ID and updated data
+        personService.update(nameExist.id, updatedPerson)
+          .then(returnedPerson => {
+            // Update state with the returned person data
+            setPersons(persons.map(person => person.id !== nameExist.id ? person : returnedPerson));
+            setsuccessMessage("Changed the user's number");
+            setTimeout(() => setsuccessMessage(null), 5000);
+          })
+          .catch(error => {
+            setErrorMessage("Failed to update user");
+            setTimeout(() => setErrorMessage(null), 5000);
+          });
+  
       }
-
+  
       return;
     }
-    
+  
+    // For new person, omit the ID
     const newPerson = {
-      id: String(persons.length + 1),
-      name : newName,
-      number : newNumber,
-      
-    }
-    
-
-    personService.create(newPerson).then(returnedPerson =>{
-      setPersons([...persons,newPerson]);
-      setsuccessMessage("Added user to the database");
-      setTimeout(()=> setsuccessMessage(null),5000)
-
-    })
-
-  }
+      name: newName,
+      number: newNumber,
+    };
+  
+    // Create a new person entry
+    personService.create(newPerson)
+      .then(returnedPerson => {
+        // Update state with the new person including the ID
+        setPersons([...persons, returnedPerson]);
+        setsuccessMessage("Added user to the database");
+        setTimeout(() => setsuccessMessage(null), 5000);
+      })
+      .catch(error => {
+        setErrorMessage("Failed to add user");
+        setTimeout(() => setErrorMessage(null), 5000);
+      });
+  };
+  
 
   const handleDelete = (id) => {
     if (window.confirm("are you sure")){
